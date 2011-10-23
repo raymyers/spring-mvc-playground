@@ -3,6 +3,7 @@
 <html>
 <head>
 	<title>Home</title>
+	<script type="text/javascript" src="/mvc/js/app.js"></script>
 </head>
 <body>
 <h1>
