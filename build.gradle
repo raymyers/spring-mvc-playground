@@ -1,0 +1,33 @@
+apply plugin: 'eclipse'
+apply plugin: 'java'
+apply plugin: 'war'
+
+archivesBaseName = 'jhaml'
+group = 'com.cadrlife.jhaml'
+version = '0.1.3'
+sourceCompatibility = 1.5
+
+repositories {
+    mavenCentral()
+    // for markdownj
+    mavenRepo(urls : "http://scala-tools.org/repo-releases")
+}
+
+configurations {
+  compile.transitive = true
+  testCompile {
+    transitive = true
+    extendsFrom compile
+  }
+}
+
+dependencies {
+    compile group: 'commons-lang', name: 'commons-lang', version: '2.5'
+    compile group: 'com.google.guava', name: 'guava', version: 'r06'
+    compile group: 'org.markdownj', name: 'markdownj', version: '0.3.0-1.0.2b4'
+    compile group: 'org.springframework', name: 'spring-webmvc', version: '3.0.6.RELEASE'
+    compile group: 'org.springframework', name: 'spring-context', version: '3.0.6.RELEASE'
+    compile group: 'log4j', name: 'log4j', version: '1.2.16'
+    compile group: 'taglibs', name: 'standard', version: '1.1.2'
+    testCompile group: 'junit', name: 'junit', version: '4.+'
+}
