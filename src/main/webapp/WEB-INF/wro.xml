@@ -1,6 +1,5 @@
 <groups xmlns="http://www.isdc.ro/wro">
   <group name="scripts">
-    <js>/lib/**.js</js>
-    <js>/lib/**.coffee</js>
+    <js>/WEB-INF/js/**</js>
   </group>
 </groups>
