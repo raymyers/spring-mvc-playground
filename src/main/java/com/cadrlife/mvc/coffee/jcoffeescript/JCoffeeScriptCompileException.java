@@ -14,8 +14,16 @@
  * limitations under the License.
  */
 
-package com.cadrlife.mvc.coffee;
+package com.cadrlife.mvc.coffee.jcoffeescript;
 
-public enum Option {
-	BARE
+import org.mozilla.javascript.JavaScriptException;
+
+public class JCoffeeScriptCompileException extends Exception {
+
+	private static final long serialVersionUID = 1L;
+
+	JCoffeeScriptCompileException (JavaScriptException e) {
+        super(e.getValue().toString(), e);
+    }
+
 }

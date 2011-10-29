@@ -17,6 +17,18 @@
 	<filter>
 	<filter-name>coffee</filter-name>
 	<filter-class>com.cadrlife.mvc.coffee.CoffeeFilter</filter-class>
+	<init-param>
+		<param-name>coffeeFiles</param-name>
+		<param-value>/WEB-INF/js/**/*.coffee</param-value>
+	</init-param>
+	<init-param>
+		<param-name>concatenateRoot</param-name>
+		<param-value>/WEB-INF/js/main.coffee</param-value>
+	</init-param>
+	<init-param>
+		<param-name>concatenateName</param-name>
+		<param-value>/js/app.js</param-value>
+	</init-param>
 	</filter>
 	
 	<filter-mapping>

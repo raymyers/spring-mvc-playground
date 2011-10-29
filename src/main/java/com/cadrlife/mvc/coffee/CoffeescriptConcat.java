@@ -86,7 +86,7 @@ public class CoffeescriptConcat {
 	 * create a list of all files with the classes they contain and the classes 
 	 * those classes depend on.
 	 */
-	public List<FileDef> mapDependencies(List<File> sourceFiles, List<File> includeFiles) throws IOException {
+	public List<FileDef> mapDependencies(Iterable<File> sourceFiles, Iterable<File> includeFiles) throws IOException {
 		List<FileDef> fileDefs = Lists.newArrayList();
 		for (File sourceFile : Iterables.concat(sourceFiles, includeFiles)) {
 			String contents = Files.toString(sourceFile, Charset.defaultCharset());
@@ -116,10 +116,10 @@ public class CoffeescriptConcat {
 	 * If it doesn't have any it's fit to go on the list.  If it does, find the file(s)
 	 * that contain the classes dependencies.  These must go first in the hierarchy.
 	 */
-	public String concatFiles(List<File> sourceFiles, List<FileDef> fileDefs) {
+	public String concatFiles(Iterable<File> sourceFiles, List<FileDef> fileDefs) {
 		final List<String> usedFiles = Lists.newArrayList();
 		final List<FileDef> allFileDefs = Lists.newArrayList(fileDefs);
-		final Collection<String> sourceFileNames = Collections2.transform(sourceFiles, new Function<File, String>() {
+		final Iterable<String> sourceFileNames = Iterables.transform(sourceFiles, new Function<File, String>() {
 
 			public String apply(File f) {
 				return stripCoffeeSuffix(f.getName());
@@ -129,7 +129,7 @@ public class CoffeescriptConcat {
  		Stack<FileDef> sourceFileDefs = new Stack<FileDef>();
  		sourceFileDefs.addAll(Collections2.filter(fileDefs, new Predicate<FileDef>() {
 			public boolean apply(FileDef input) {
-				return sourceFileNames.contains(input.getName());
+				return Iterables.contains(sourceFileNames, input.getName());
 			}
 			
 		}));
@@ -234,7 +234,7 @@ public class CoffeescriptConcat {
 		return classDirectivePattern.matcher(strippedInput).replaceAll("");
 	}
 	
-	public String concatenate(List<File> rootFiles, List<File> includeFiles) throws IOException {
+	public String concatenate(Iterable<File> rootFiles, Iterable<File> includeFiles) throws IOException {
 		List<FileDef> deps = mapDependencies(rootFiles, includeFiles);
 		String output = concatFiles(rootFiles, deps);
 		return removeDirectives(output);

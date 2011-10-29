@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
-package com.cadrlife.mvc.coffee;
+package com.cadrlife.mvc.coffee.jcoffeescript;
 
-import org.mozilla.javascript.JavaScriptException;
+import java.util.Collection;
 
-public class JCoffeeScriptCompileException extends Exception {
 
-	private static final long serialVersionUID = 1L;
+public class Options {
+    private final String javaScriptOptions;
 
-	JCoffeeScriptCompileException (JavaScriptException e) {
-        super(e.getValue().toString(), e);
+    public Options(Collection<Option> options) {
+        javaScriptOptions = String.format("{bare: %b}", options.contains(Option.BARE));
     }
 
+    public String toJavaScript() {
+        return javaScriptOptions;
+    }
 }

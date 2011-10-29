@@ -1,9 +1,10 @@
 package com.cadrlife.mvc.coffee;
 
-import java.io.ByteArrayOutputStream;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Arrays;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -22,21 +23,42 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.web.context.support.ServletContextResourcePatternResolver;
 
-import com.google.common.io.ByteStreams;
+import com.cadrlife.mvc.coffee.jcoffeescript.JCoffeeScriptCompileException;
+import com.cadrlife.mvc.coffee.jcoffeescript.JCoffeeScriptCompiler;
+import com.google.common.base.Function;
+import com.google.common.base.Strings;
+import com.google.common.collect.Iterables;
 import com.google.common.io.CharStreams;
 
 /**
- * This plugin intercepts requests for static files ending in '.coffee', and
- * serves the compiled javascript instead.
+ * Filter to compile coffeescript on the fly, with concatenation support. Does
+ * do caching yet.
+ * 
+ * This filter takes 3 parameters:
+ * 
+ * coffeeFiles. Required. Ant-style path to all coffee files
+ * ex. /WEB-INF/js/*.coffee
+ * 
+ * concatenateRoot. Optional. Path to the root file to resolve dependencies and concatenate results
+ * ex. /WEB-INF/js/main.coffee
+ * 
+ * concatenateName. Optional. Path that maps to the concatenated source code.
+ * ex. /js/app.js
  */
 public class CoffeeFilter implements Filter {
+	private String concatenateRoot = "";
+	private String concatenateName = "";
+	private String coffeeFiles = "";
+	// Filter will diable itself if not configured to do anything useful.
+	private boolean enabled = true;
+	private boolean concatenationEnabled;
 
 	private static final class CompiledCoffee {
-		public final Date dateCached; // Time this was put in the cache
+		// public final Date dateCached; // Time this was put in the cache
 		public final String output; // Compiled coffee
 
 		public CompiledCoffee(Date date, String output) {
-			this.dateCached = date;
+			// this.dateCached = date;
 			this.output = output;
 		}
 	}
@@ -51,15 +73,30 @@ public class CoffeeFilter implements Filter {
 	};
 	private Map<String, CompiledCoffee> cache; // Map of Relative Path ->
 												// Compiled coffee
+												// private Date lastCacheUpdate
+												// = new Date(0l);
 	private FilterConfig filterConfig;
 
 	public void init(FilterConfig filterConfig) throws ServletException {
 		this.filterConfig = filterConfig;
 		cache = new HashMap<String, CompiledCoffee>();
+		coffeeFiles = filterConfig.getInitParameter("coffeeFiles");
+		concatenateRoot = filterConfig.getInitParameter("concatenateRoot");
+		concatenateName = filterConfig.getInitParameter("concatenateName");
+		if (Strings.isNullOrEmpty(coffeeFiles)) {
+			this.enabled = false;
+			// TODO: Log this
+		}
+		concatenationEnabled = !(Strings.isNullOrEmpty(concatenateName) || Strings
+				.isNullOrEmpty(concatenateRoot));
 	}
 
 	public void doFilter(ServletRequest request, ServletResponse response,
 			FilterChain chain) throws IOException, ServletException {
+		if (!enabled) {
+			chain.doFilter(request, response);
+			return;
+		}
 		HttpServletRequest httpReq = (HttpServletRequest) request;
 		String requestURI = httpReq.getRequestURI();
 		ServletContext servletContext = filterConfig.getServletContext();
@@ -67,82 +104,98 @@ public class CoffeeFilter implements Filter {
 		if (requestURI.startsWith(contextPath)) {
 			requestURI = requestURI.substring(contextPath.length());
 		}
+		String coffeeRequestURI = requestURI;
 		if (requestURI.endsWith(".js")) {
-			requestURI = requestURI.substring(0, requestURI.length() - 3)
+			coffeeRequestURI = requestURI.substring(0, requestURI.length() - 3)
 					+ ".coffee";
 		}
-		System.out.println("REQ URI" + requestURI);
 		InputStream stream = servletContext.getResourceAsStream("/WEB-INF"
-				+ requestURI);
-		System.out.println(contextPath);
-
-		try {
-			if (requestURI.equals("/js/app.coffee")) {
-				response.setContentType("text/javascript");
-				String coffee = concatenateResourcesAsString(allAppCoffee(servletContext));
-				String compiledCoffee = getCompiler().compile(coffee);
-				response.getOutputStream().print(compiledCoffee);
-				cache.put(requestURI, new CompiledCoffee(new Date(),
-						compiledCoffee));
-				return;
-			}
-			if (stream == null) {
-				chain.doFilter(request, response);
-				return;
-			}
+				+ coffeeRequestURI);
+		if (concatenationEnabled && requestURI.equals(concatenateName)) {
 			response.setContentType("text/javascript");
-			// Check the cache.
-			CompiledCoffee cc = cache.get(requestURI);
-			if (cc != null
-			// && cc.sourceLastModified.equals(file.lastModified())
-			) {
-				response.getOutputStream().print(cc.output);
-				return;
-			}
-			// Compile the coffee and return.
-			String coffee = CharStreams.toString(new InputStreamReader(stream));
-			String compiledCoffee = getCompiler().compile(coffee);
+			String coffee = concatenateResourcesAsString(
+					rootCoffee(servletContext), allAppCoffee(servletContext));
+			String compiledCoffee = compileCoffeescript(coffeeRequestURI, coffee);
 			response.getOutputStream().print(compiledCoffee);
 			cache.put(requestURI,
 					new CompiledCoffee(new Date(), compiledCoffee));
+			return;
+		}
+		if (stream == null) {
+			chain.doFilter(request, response);
+			return;
+		}
+		response.setContentType("text/javascript");
+		// Check the cache.
+		CompiledCoffee cc = cache.get(requestURI);
+		if (cc != null
+		// && cc.sourceLastModified.equals(file.lastModified())
+		) {
+			response.getOutputStream().print(cc.output);
+			return;
+		}
+		// Compile the coffee and return.
+		String coffee = CharStreams.toString(new InputStreamReader(stream));
+		String compiledCoffee = compileCoffeescript(coffeeRequestURI, coffee);
+		response.getOutputStream().print(compiledCoffee);
+		cache.put(requestURI, new CompiledCoffee(new Date(), compiledCoffee));
+		// Render a nice error page?
+	}
+
+	private String compileCoffeescript(String requestURI, String coffee) {
+		try {
+			return getCompiler().compile(coffee);
 		} catch (JCoffeeScriptCompileException e) {
 			e.printStackTrace();
-			// Exception ex = new CompilationException(file, e.getMessage(),
-			// getLineNumber(e), -1, -1);
+			throw new CompilationException(requestURI, coffee,
+					e.getMessage(), getLineNumber(e), -1, -1);
 		}
-		// // Render a nice error page.
-		// Template tmpl = TemplateLoader.load("errors/500.html");
-		// Map<String, Object> args = new HashMap<String, Object>();
-		// Exception ex = new CompilationException(file, e.getMessage(),
-		// getLineNumber(e), -1, -1);
-		// args.put("exception", ex);
-		// play.Logger.error(ex, "Coffee compilation error");
-		// response.contentType = "text/html";
-		// response.status = 500;
-		// response.print(tmpl.render(args));
-		// }
-		// return true;
 	}
 
-	private String concatenateResourcesAsString(Resource[] resources) {
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-		for (Resource r : resources) {
-			try {
-				System.out.println(r);
-				ByteStreams.copy(r.getInputStream(), out);
-				out.write("\n".getBytes());
-			} catch (IOException e) {
-				e.printStackTrace();
-			}
-		}
-		return out.toString();
-	}
-
-	private Resource[] allAppCoffee(ServletContext servletContext)
+	private Iterable<Resource> rootCoffee(ServletContext servletContext)
 			throws IOException {
 		ServletContextResourcePatternResolver resolver = new ServletContextResourcePatternResolver(
 				servletContext);
-		return resolver.getResources("/WEB-INF/js/app/**.coffee");
+
+		return Arrays.asList(resolver.getResources(concatenateRoot));
+	}
+
+	private Iterable<Resource> allAppCoffee(ServletContext servletContext)
+			throws IOException {
+		ServletContextResourcePatternResolver resolver = new ServletContextResourcePatternResolver(
+				servletContext);
+		Resource[] resources = resolver.getResources(coffeeFiles);
+		return Arrays.asList(resources);
+	}
+
+	private String concatenateResourcesAsString(
+			Iterable<Resource> rootResources,
+			Iterable<Resource> includeResources) throws IOException {
+		Iterable<File> rootFiles = resourcesToFiles(rootResources);
+		Iterable<File> includeFiles = resourcesToFiles(includeResources);
+		return concatenateFilesAsString(rootFiles, includeFiles);
+	}
+
+	private String concatenateFilesAsString(Iterable<File> rootFiles,
+			Iterable<File> includeFiles) throws IOException {
+		return new CoffeescriptConcat().concatenate(rootFiles, includeFiles);
+	}
+
+	private Iterable<File> resourcesToFiles(Iterable<Resource> rootResources) {
+		Function<Resource, File> resourceToFile = new Function<Resource, File>() {
+
+			public File apply(Resource r) {
+				try {
+					return r.getFile();
+				} catch (IOException e) {
+					throw new RuntimeException(e);
+				}
+			}
+
+		};
+		Iterable<File> rootFiles = Iterables.transform(rootResources,
+				resourceToFile);
+		return rootFiles;
 	}
 
 	public void destroy() {
