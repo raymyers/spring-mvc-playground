@@ -7,6 +7,8 @@ import java.util.List;
 import org.junit.Before;
 import org.junit.Test;
 
+import com.cadrlife.mvc.coffee.concat.CoffeescriptConcat;
+
 public class CoffeescriptConcatTest {
 
 	@Before

@@ -23,6 +23,7 @@ import javax.servlet.http.HttpServletRequest;
 import org.springframework.core.io.Resource;
 import org.springframework.web.context.support.ServletContextResourcePatternResolver;
 
+import com.cadrlife.mvc.coffee.concat.CoffeescriptConcat;
 import com.cadrlife.mvc.coffee.jcoffeescript.JCoffeeScriptCompileException;
 import com.cadrlife.mvc.coffee.jcoffeescript.JCoffeeScriptCompiler;
 import com.google.common.base.Function;

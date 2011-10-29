@@ -1,4 +1,4 @@
-package com.cadrlife.mvc.coffee;
+package com.cadrlife.mvc.coffee.concat;
 
 import java.io.File;
 import java.io.IOException;
@@ -12,7 +12,6 @@ import java.util.regex.Pattern;
 import static com.google.common.base.Predicates.not;
 import static com.google.common.base.Predicates.in;
 
-import com.cadrlife.mvc.coffee.concat.FileDef;
 import com.google.common.base.Function;
 import com.google.common.base.Predicate;
 import com.google.common.collect.Collections2;
