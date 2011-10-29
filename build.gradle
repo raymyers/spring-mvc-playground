@@ -26,11 +26,13 @@ dependencies {
     compile group: 'com.google.guava', name: 'guava', version: 'r06'
     compile group: 'org.markdownj', name: 'markdownj', version: '0.3.0-1.0.2b4'
     compile group: 'org.springframework', name: 'spring-webmvc', version: '3.0.6.RELEASE'
+    compile group: 'org.springframework', name: 'spring-web', version: '3.0.6.RELEASE'
     compile group: 'org.springframework', name: 'spring-context', version: '3.0.6.RELEASE'
     compile group: 'javax.servlet', name: 'servlet-api', version: '2.5'
     compile group: 'javax.servlet', name: 'jstl', version: '1.2'
     compile group: 'log4j', name: 'log4j', version: '1.2.16'
     compile group: 'taglibs', name: 'standard', version: '1.1.2'
+    compile group: 'org.mozilla', name: 'rhino', version: '1.7R3'
     compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '1.8.3'
     
     testCompile group: 'junit', name: 'junit', version: '4.+'
