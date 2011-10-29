@@ -4,6 +4,7 @@
 	<comment></comment>
 	<projects>
 		<project>Servers</project>
+		<project>JHaml</project>
 	</projects>
 	<buildSpec>
 		<buildCommand>
