@@ -6,6 +6,7 @@ import groovy.text.GStringTemplateEngine;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
+import java.util.Locale;
 import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
@@ -33,14 +34,24 @@ public class HamlView extends AbstractUrlBasedView {
 	}
 
 	private String loadResource() throws IOException {
-		String resource = getUrl();
-		InputStream str = getServletContext().getResourceAsStream(resource);
+		InputStream str = getUrlAsStream();
 		if (str == null) {
-			LOG.error(resource + " not found");
+			LOG.error(getUrl() + " not found");
 			return "";
 		}
 		String hamlString = CharStreams.toString(new InputStreamReader(str));
 		return hamlString;
+	}
+
+	private InputStream getUrlAsStream() {
+		String resource = getUrl();
+		InputStream str = getServletContext().getResourceAsStream(resource);
+		return str;
+	}
+	
+	@Override
+	public boolean checkResource(Locale locale) throws Exception {
+		return getUrlAsStream() != null;
 	}
 
 }

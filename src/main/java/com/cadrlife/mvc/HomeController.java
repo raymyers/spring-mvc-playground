@@ -36,4 +36,23 @@ public class HomeController {
 		return "home";
 	}
 	
+	/**
+	 * Simply selects the home view to render by returning its name.
+	 */
+	@RequestMapping(value = "/jhome", method = RequestMethod.GET)
+	public String jhome(Locale locale, Model model) {
+		LOG.info("Welcome home! the client locale is "+ locale.toString());
+		
+		Date date = new Date();
+		DateFormat dateFormat = DateFormat.getDateTimeInstance(DateFormat.LONG, DateFormat.LONG, locale);
+		
+		String formattedDate = dateFormat.format(date);
+		
+		model.addAttribute("serverTime", formattedDate );
+		
+		return "jhome";
+	}
+	
+	
+	
 }

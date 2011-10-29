@@ -5,4 +5,6 @@ public class HamlViewResolver extends UrlBasedViewResolver {
 	public HamlViewResolver() {
 		setViewClass(HamlView.class);
 	}
+	
+	
 }
